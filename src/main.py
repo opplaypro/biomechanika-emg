@@ -90,6 +90,7 @@ def plot_data(
         data_1: pd.Series,
         data_2: pd.Series,
         strings: list[str],
+        fs: float,
         window_size: int = 25
         ) -> None:
     """
@@ -107,14 +108,17 @@ def plot_data(
     moving_avg_1 = data_1.rolling(window=window_size).mean()
     moving_avg_2 = data_2.rolling(window=window_size).mean()
     fig, axs = plt.subplots(2, 1, figsize=(15, 8))
-    axs[0].plot(range(len(data_1)), data_1, label="channel 1")
-    axs[0].plot(range(len(data_2)), data_2, label="channel 2")
-    axs[1].plot(range(len(moving_avg_1)),
-                moving_avg_1, label="channel 1 (moving avg)")
-    axs[1].plot(range(len(moving_avg_2)),
-                moving_avg_2, label="channel 2 (moving avg)")
+    time = np.arange(len(data_1)) / fs
+
+    axs[0].plot(time, data_1, label="channel 1")
+    axs[0].plot(time, data_2, label="channel 2")
+    axs[1].plot(time[:len(moving_avg_1)], moving_avg_1,
+                label="channel 1 (moving avg)")
+    axs[1].plot(time[:len(moving_avg_2)], moving_avg_2,
+                label="channel 2 (moving avg)")
     axs[0].set_title(f"{strings[0]} - Raw Data")
     axs[1].set_title(f"{strings[0]} - Moving Average ({window_size})")
+
     for ax in axs:
         ax.set_xlabel("Time")
         ax.set_ylabel("EMG Signal")
@@ -125,7 +129,7 @@ def plot_data(
 
 def stft_plot(
         data: pd.Series,
-        fs: int,
+        fs: float,
         strings: list[str]
         ) -> None:
     """
@@ -160,6 +164,8 @@ def main() -> None:
     total_data = pd.DataFrame()
     path = Path(__file__).parent / "data"
     for file in path.glob("*.txt"):
+        if "uma" not in file.stem:
+            continue  # only process correct files
         print(f"Processing file: {file}")
         stats, markers, data = load_data(file)
         extra_data.append(pd.DataFrame(stats.iloc[1, :]).T)
@@ -192,8 +198,69 @@ def main() -> None:
         total_data.iloc[:, 1],
         total_data.iloc[:, 2],
         ["Total Data"],
+        fs,
         window_size=15)
+    stft_plot(
+        total_data.iloc[:, 1],
+        fs,
+        ["Total Data - Channel 1"])
+    stft_plot(
+        total_data.iloc[:, 2],
+        fs,
+        ["Total Data - Channel 2"])
+
+
+def test():
+    """
+    The main function of the script. It loads, preprocesses, and plots the EMG
+    data from the specified files.
+    """
+    # load data
+    extra_data = []
+    total_data = pd.DataFrame()
+    path = Path(__file__).parent / "data"
+    for file in path.glob("*.txt"):
+        print(f"Processing file: {file}")
+        if "uma" in file.stem:
+            print(f"Skipping file: {file}")
+            continue  # process all files except correct ones
+        stats, markers, data = load_data(file)
+        extra_data.append(pd.DataFrame(stats.iloc[1, :]).T)
+        data = preprocess_data(data)
+        total_data = pd.concat([total_data, data], ignore_index=True)
+
+    # calculate sampling frequency (hh:mm:ss)
+    length_1 = extra_data[0].iloc[-1].values[-1]
+    print(f"Length of file 1: {length_1}")
+    time_pattern = r"(\d{2}):(\d{2}):(\d{2})"
+    match_1 = re.match(time_pattern, length_1)
+    if match_1 :
+        hours_1, minutes_1, seconds_1 = map(int, match_1.groups())
+        total_time = hours_1 * 3600 + minutes_1 * 60 + seconds_1
+        total_samples = len(total_data)
+        fs = total_samples / total_time
+        print(f"Sampling frequency: {fs:.2f} Hz")
+    else:
+        print("Error: Time format is incorrect. Expected format is hh:mm:ss.")
+        return
+
+    # plot data
+    plot_data(
+        total_data.iloc[:, 1],
+        total_data.iloc[:, 2],
+        ["Total Data"],
+        fs,
+        window_size=15)
+    stft_plot(
+        total_data.iloc[:, 1],
+        fs,
+        ["Total Data - Channel 1"])
+    stft_plot(
+        total_data.iloc[:, 2],
+        fs,
+        ["Total Data - Channel 2"])
 
 
 if __name__ == "__main__":
     main()
+    # test()
