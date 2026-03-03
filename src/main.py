@@ -107,21 +107,31 @@ def plot_data(
     """
     moving_avg_1 = data_1.rolling(window=window_size).mean()
     moving_avg_2 = data_2.rolling(window=window_size).mean()
-    fig, axs = plt.subplots(2, 1, figsize=(15, 8))
+    rms_1 = np.sqrt((data_1**2).rolling(window=window_size).mean())
+    rms_2 = np.sqrt((data_2**2).rolling(window=window_size).mean())
+
+    fig, axs = plt.subplots(3, 1, figsize=(15, 10))
     time = np.arange(len(data_1)) / fs
 
-    axs[0].plot(time, data_1, label="channel 1")
-    axs[0].plot(time, data_2, label="channel 2")
+    axs[0].plot(time, data_1,
+                label="channel 1 (raw)")
+    axs[0].plot(time, data_2,
+                label="channel 2 (raw)")
     axs[1].plot(time[:len(moving_avg_1)], moving_avg_1,
                 label="channel 1 (moving avg)")
     axs[1].plot(time[:len(moving_avg_2)], moving_avg_2,
                 label="channel 2 (moving avg)")
+    axs[2].plot(time[:len(rms_1)], rms_1,
+                label="channel 1 (RMS)")
+    axs[2].plot(time[:len(rms_2)], rms_2,
+                label="channel 2 (RMS)")
     axs[0].set_title(f"{strings[0]} - Raw Data")
     axs[1].set_title(f"{strings[0]} - Moving Average ({window_size})")
+    axs[2].set_title(f"{strings[0]} - RMS ({window_size})")
 
     for ax in axs:
-        ax.set_xlabel("Time")
-        ax.set_ylabel("EMG Signal")
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("EMG Signal (µv)")
         ax.legend()
     plt.tight_layout()
     plt.show()
