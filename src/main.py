@@ -224,10 +224,16 @@ def get_marked_data(
         if len(closest_indices) == 1:
             closest_indices.append(len(data_loc) - 1)
 
+        if len(closest_indices) == 1:
+            closest_indices.append(len(data_loc) - 1)
+
         i_range: int = closest_indices[1] - closest_indices[0]
         index = int(i_range * (timestamp - timestamp // 1))
         return index + closest_indices[0]
 
+    def parse_timestamp(
+            timestamp: str
+            ) -> float:
     def parse_timestamp(
             timestamp: str
             ) -> float:
@@ -254,8 +260,18 @@ def get_marked_data(
         else:
             raise ValueError(f"Error: Time format is incorrect: {timestamp}")
 
+
     start_time = marker.iloc[0, 2]
     start_time = parse_timestamp(start_time)
+    start_index = find_index(data, start_time)
+    duration = marker.iloc[0, 3]
+    duration = parse_timestamp(duration)
+    end_time = start_time + duration
+    end_index = find_index(data, end_time)
+
+    # print(f"{start_time=}\t {end_time=}\t\t{start_index=}\t {end_index=}")
+
+    return data.iloc[start_index:end_index, :]
     start_index = find_index(data, start_time)
     duration = marker.iloc[0, 3]
     duration = parse_timestamp(duration)
@@ -350,6 +366,7 @@ def test():
     for i, data in enumerate(total_data_list):
         for j in range(1, len(extra_data[i][1])):
             df = pd.DataFrame(extra_data[i][1].iloc[j, :]).T
+            # get data of marker (part i, line j)
             marked_data = get_marked_data(data, df)
             print(marked_data)
 
