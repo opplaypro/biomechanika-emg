@@ -164,6 +164,29 @@ def stft_plot(
     plt.show()
 
 
+def get_marked_data(
+        data: pd.DataFrame,
+        marker: pd.DataFrame
+        ) -> pd.DataFrame:
+    """
+    Extracts the EMG data corresponding to specific markers.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        The EMG data from which to extract the marked segment.
+        (part 1 or part two, not total data)
+    marker : pd.DataFrame
+        Marker indicating the segment to be extracted from the EMG data.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the data corresponding to the specified marker.
+    """
+    return pd.DataFrame()
+
+
 def main() -> None:
     """
     The main function of the script. It loads, preprocesses, and plots the EMG
@@ -244,7 +267,7 @@ def test():
     print(f"Length of file 1: {length_1}")
     time_pattern = r"(\d{2}):(\d{2}):(\d{2})"
     match_1 = re.match(time_pattern, length_1)
-    if match_1 :
+    if match_1:
         hours_1, minutes_1, seconds_1 = map(int, match_1.groups())
         total_time = hours_1 * 3600 + minutes_1 * 60 + seconds_1
         total_samples = len(total_data)
