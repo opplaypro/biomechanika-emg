@@ -112,7 +112,7 @@ def plot_data(
 
     time = np.arange(len(data_1)) / fs
 
-    if verbose == True:
+    if verbose is True:
         moving_avg_1 = data_1.rolling(window=window_size).mean()
         moving_avg_2 = data_2.rolling(window=window_size).mean()
         fig, axs = plt.subplots(3, 1, figsize=(15, 10))
@@ -272,7 +272,6 @@ def get_marked_data(
         else:
             raise ValueError(f"Error: Time format is incorrect: {timestamp}")
 
-
     start_time = marker.iloc[0, 2]
     start_time = parse_timestamp(start_time)
     start_index = find_index(data, start_time)
@@ -309,7 +308,9 @@ def plot_mvc_normalization(
         return np.sqrt((signal ** 2).rolling(window=window_size).mean())
 
     def trimmed_signal(signal: pd.Series,
-        trim_start: float = 0.25, trim_end: float = 0.05) -> float:
+                       trim_start: float = 0.25,
+                       trim_end: float = 0.05
+                       ) -> float:
         n = len(signal)
         start = int(n * trim_start)
         end = int(n * (1 - trim_end))
@@ -342,7 +343,6 @@ def plot_mvc_normalization(
     norm_base_2 = normalize(rms_base_2, mean_base_2, mean_mvc_2)
     norm_mvc_2 = normalize(rms_mvc_2, mean_base_2, mean_mvc_2)
     norm_ex_2 = normalize(rms_ex_2, mean_base_2, mean_mvc_2)
-
 
     t_base_1 = np.arange(len(norm_base_1)) / fs
     t_mvc_1 = np.arange(len(norm_mvc_1)) / fs
@@ -500,4 +500,3 @@ def test():
 if __name__ == "__main__":
     main()
     # test()
-
