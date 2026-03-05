@@ -92,7 +92,9 @@ def plot_data(
         strings: list[str],
         fs: float,
         window_size: int = 25,
-        verbose: bool = False
+        verbose: bool = False,
+        x_normalized: bool = False,
+        y_normalized: bool = False
         ) -> None:
     """
     Plots the EMG data.
@@ -107,10 +109,27 @@ def plot_data(
         A list of strings to be used in the plot title and labels.
     """
 
+    def normalize_time(signal: pd.Series, target_len: int) -> np.ndarray:
+        """
+        Resample signal to target length using interpolation.
+        """
+        x_old = np.linspace(0, 1, len(signal))
+        x_new = np.linspace(0, 1, target_len)
+
+        return np.interp(x_new, x_old, signal)
+
     rms_1 = np.sqrt((data_1**2).rolling(window=window_size).mean())
     rms_2 = np.sqrt((data_2**2).rolling(window=window_size).mean())
 
-    time = np.arange(len(data_1)) / fs
+    if not x_normalized:
+        time = np.arange(len(data_1)) / fs
+    else:
+        target_len = max(len(data_1), len(data_2))
+
+        data_1 = normalize_time(data_1.to_numpy(), target_len)
+        data_2 = normalize_time(data_2.to_numpy(), target_len)
+
+        time = np.linspace(0, 100, target_len)
 
     if verbose is True:
         moving_avg_1 = data_1.rolling(window=window_size).mean()
@@ -145,8 +164,14 @@ def plot_data(
         axs[1].set_title(f"{strings[0]} - RMS ({window_size})")
 
     for ax in axs:
-        ax.set_xlabel("Time (s)")
-        ax.set_ylabel("EMG Signal (µv)")
+        if not x_normalized:
+            ax.set_xlabel("Time (s)")
+        else:
+            ax.set_xlabel("Exercise Duration (%)")
+        if not y_normalized:
+            ax.set_ylabel("EMG Signal (µv)")
+        else:
+            ax.set_ylabel("Activation (% MVC)")
         ax.legend()
     plt.tight_layout()
     plt.show()
@@ -295,7 +320,7 @@ def plot_mvc_normalization(
         strings: list[str],
         fs: float,
         window_size: int = 25
-        ) -> None:
+        ) -> dict:
     """
     Plots MVC-normalized RMS signal (Channel 1 and 2).
 
@@ -389,6 +414,20 @@ def plot_mvc_normalization(
     plt.tight_layout()
     plt.show()
 
+    return {
+        "mean_base_1": mean_base_1,
+        "mean_mvc_1": mean_mvc_1,
+        "mean_base_2": mean_base_2,
+        "mean_mvc_2": mean_mvc_2
+    }
+
+
+def normalize_emg(signal: pd.Series, norm_results: dict, ch: int) -> pd.Series:
+    base = norm_results[f"mean_base_{ch}"]
+    mvc = norm_results[f"mean_mvc_{ch}"]
+
+    return (signal - base) / (mvc - base) * 100
+
 
 def main() -> None:
     """
@@ -462,32 +501,57 @@ def main() -> None:
     plot_data(
         results["baseline"].iloc[:, 1],
         results["baseline"].iloc[:, 2],
-        ["baseline"],
+        ["Baseline"],
         fs=fs,
         window_size=15)
-    plot_mvc_normalization(
+    norm = plot_mvc_normalization(
         results["baseline"].iloc[:, 1],
         results["mvc"].iloc[:, 1],
-        results["ex4"].iloc[:, 1],
+        results["ex1l"].iloc[:, 1],
 
         results["baseline"].iloc[:, 2],
         results["mvc"].iloc[:, 2],
-        results["ex4"].iloc[:, 2],
+        results["ex1r"].iloc[:, 2],
 
-        ["MVC Normalization – Exercise 4"],
+        ["MVC Normalization – Exercise 1"],
         fs,
         window_size=15
     )
-
-
-def test():
-    """
-    Testing function of the script.
-    Used only for testing, will change a lot.
-    """
-    pass
+    plot_data(
+        results["ex1l"].iloc[:, 1],
+        results["ex1r"].iloc[:, 2],
+        ["Exercise 1"],
+        fs=fs,
+        window_size=15,
+        x_normalized=True)
+    plot_data(
+        results["ex2"].iloc[:, 1],
+        results["ex2"].iloc[:, 2],
+        ["Exercise 2"],
+        fs=fs,
+        window_size=15)
+    plot_data(
+        results["ex3"].iloc[:, 1],
+        results["ex3"].iloc[:, 2],
+        ["Exercise 3"],
+        fs=fs,
+        window_size=15)
+    plot_data(
+        results["ex4"].iloc[:, 1],
+        results["ex4"].iloc[:, 2],
+        ["Exercise 4"],
+        fs=fs,
+        window_size=15)
+    ext4_norm_ch1 = normalize_emg(results["ex4"].iloc[:, 1], norm, ch=1)
+    ext4_norm_ch2 = normalize_emg(results["ex4"].iloc[:, 2], norm, ch=2)
+    plot_data(
+        ext4_norm_ch1,
+        ext4_norm_ch2,
+        ["Exercise 4 (MVC normalized)"],
+        fs=fs,
+        window_size=15,
+        y_normalized=True)
 
 
 if __name__ == "__main__":
     main()
-    # test()
