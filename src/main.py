@@ -479,15 +479,6 @@ def main() -> None:
         window_size=15
     )
 
-    stft_plot(
-        total_data.iloc[:, 1],
-        fs,
-        ["Total Data - Channel 1"])
-    stft_plot(
-        total_data.iloc[:, 2],
-        fs,
-        ["Total Data - Channel 2"])
-
 
 def test():
     """
