@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from scipy import signal
 import numpy as np
 import re
+from datetime import datetime
 
 
 def load_data(
@@ -174,6 +175,7 @@ def plot_data(
             ax.set_ylabel("Activation (% MVC)")
         ax.legend()
     plt.tight_layout()
+    plt.savefig(f"img/{datetime.now().strftime('%S%f')}_plot.png")
     plt.show()
 
 
@@ -201,6 +203,7 @@ def stft_plot(
     plt.xlabel('Time [sec]')
     plt.colorbar(label='Magnitude')
     plt.tight_layout()
+    plt.savefig(f"img/{datetime.now().strftime('%S%f')}_plot.png")
     plt.show()
 
 
@@ -412,6 +415,7 @@ def plot_mvc_normalization(
     axs[1].legend()
 
     plt.tight_layout()
+    plt.savefig(f"img/{datetime.now().strftime('%S%f')}_plot.png")
     plt.show()
 
     return {
